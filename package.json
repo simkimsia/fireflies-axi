@@ -1,0 +1,57 @@
+{
+  "name": "@simkimsia/fireflies-axi",
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.33.0",
+  "description": "AXI-compliant wrapper around the fireflies CLI for Fireflies.ai meeting transcripts — token-efficient TOON output, structured errors, agent-first ergonomics",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/simkimsia/fireflies-axi.git"
+  },
+  "keywords": [
+    "fireflies",
+    "meetings",
+    "transcripts",
+    "cli",
+    "agent",
+    "axi",
+    "toon"
+  ],
+  "bin": {
+    "fireflies-axi": "./dist/bin/fireflies-axi.js"
+  },
+  "files": [
+    "dist",
+    "skills/fireflies-axi",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "tsx bin/fireflies-axi.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepublishOnly": "npm run build"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@toon-format/toon": "^2.1.0",
+    "axi-sdk-js": "^0.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "prettier": "^3.8.1",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

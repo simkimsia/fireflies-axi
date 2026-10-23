@@ -1,0 +1,5 @@
+pnpm-lock.yaml
+CHANGELOG.md
+src/fireflies_cli/
+tests/
+uv.lock
