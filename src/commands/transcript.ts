@@ -22,7 +22,7 @@ Shows one meeting's details and a preview of its speaker turns.
 args[1]:
   <id>      transcript id (required; run \`fireflies-axi transcripts\` to list ids)
 flags[1]:
-  --full    every turn, uncut (default: a ${PREVIEW_BUDGET}-char preview)
+  --full    every turn uncut and every participant (default: a ${PREVIEW_BUDGET}-char preview, first ${PARTICIPANTS_MAX} participants)
 examples:
   fireflies-axi transcript abc123
   fireflies-axi transcript abc123 --full
@@ -74,17 +74,21 @@ export function renderTranscript(
   };
   const organizer = t.organizer_email || t.host_email;
   if (organizer) details.organizer = organizer;
+  // Always an array (AXI §3): cut to the first PARTICIPANTS_MAX outside
+  // --full, with the real size in participants_total when anything was cut.
   const participants = (t.participants ?? []).map(String);
-  if (participants.length > PARTICIPANTS_MAX) {
-    details.participants = `${participants.length} (first ${PARTICIPANTS_MAX}: ${participants.slice(0, PARTICIPANTS_MAX).join(", ")})`;
-  } else {
-    details.participants = participants;
-  }
+  const participantsCut = !opts.full && participants.length > PARTICIPANTS_MAX;
+  details.participants = participantsCut
+    ? participants.slice(0, PARTICIPANTS_MAX)
+    : participants;
+  if (participantsCut) details.participants_total = participants.length;
   const speakers = (t.speakers ?? [])
     .map((s) => s?.name)
     .filter((n): n is string => typeof n === "string" && n !== "");
   if (speakers.length > 0) details.speakers = speakers;
   if (t.transcript_url) details.url = t.transcript_url;
+
+  const participantsHint = `Showing ${PARTICIPANTS_MAX} of ${participants.length} participants; run \`fireflies-axi transcript ${t.id} --full\` for all`;
 
   if (turns.length === 0) {
     details.content =
@@ -93,6 +97,7 @@ export function renderTranscript(
       encode({ transcript: details }),
       renderHelp([
         `Retry \`fireflies-axi transcript ${t.id}\` in a few minutes`,
+        ...(participantsCut ? [participantsHint] : []),
       ]),
     ]);
   }
@@ -113,7 +118,7 @@ export function renderTranscript(
     remaining -= Math.min(turn.text.length, max);
   }
 
-  const hints: string[] = [];
+  const hints: string[] = participantsCut ? [participantsHint] : [];
   if (truncator.count > 0 || shown.length < turns.length) {
     hints.push(
       `Showing ${shown.length} of ${turns.length} turns (${PREVIEW_BUDGET}-char preview); run \`fireflies-axi transcript ${t.id} --full\` for all turns`,

@@ -1,7 +1,7 @@
 import { AxiError, type ErrorCode } from "../errors.js";
 import { firefliesJson } from "../fireflies.js";
 import type { ListRow } from "../transcript-model.js";
-import { renderHelp, renderList, renderOutput } from "../toon.js";
+import { encode, renderHelp, renderList, renderOutput } from "../toon.js";
 import { meetingRows } from "./transcripts.js";
 
 const HOME_LIMIT = 5;
@@ -29,7 +29,13 @@ export async function homeCommand(): Promise<string> {
   } catch (error) {
     if (error instanceof AxiError && DEGRADE.includes(error.code)) {
       return renderOutput([
-        `transcripts: unavailable (${error.code}: ${error.message})`,
+        encode({
+          transcripts: {
+            status: "unavailable",
+            code: error.code,
+            error: error.message,
+          },
+        }),
         renderHelp(error.suggestions),
       ]);
     }
@@ -49,7 +55,10 @@ export async function homeCommand(): Promise<string> {
     renderList("transcripts", meetingRows(rows, [])),
     renderHelp([
       "Run `fireflies-axi transcript <id>` for one meeting's details and transcript preview",
-      "Run `fireflies-axi transcripts --limit 50` for more meetings",
+      // A short page means the account has no more meetings (AXI §9).
+      ...(rows.length === HOME_LIMIT
+        ? ["Run `fireflies-axi transcripts --limit 50` for more meetings"]
+        : []),
     ]),
   ]);
 }

@@ -112,6 +112,23 @@ describe("transcriptsCommand", () => {
     expect(json).not.toHaveBeenCalled();
   });
 
+  it("rejects --skip above the Fireflies API limit without calling fireflies", async () => {
+    await expect(transcriptsCommand(["--skip", "5001"])).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      message: "--skip must be at most 5000 (Fireflies API limit), got 5001",
+    });
+    expect(json).not.toHaveBeenCalled();
+  });
+
+  it("does not hint at a next page past --skip 5000", async () => {
+    json.mockResolvedValue(rows(3));
+    const out = await transcriptsCommand(["--limit", "3", "--skip", "4999"]);
+    expect(out).toContain(
+      "More may exist, but the Fireflies API cannot page past --skip 5000",
+    );
+    expect(out).not.toContain("--skip 5002");
+  });
+
   it("rejects a negative --skip without calling fireflies", async () => {
     await expect(transcriptsCommand(["--skip=-1"])).rejects.toMatchObject({
       code: "VALIDATION_ERROR",

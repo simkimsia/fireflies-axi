@@ -36,6 +36,32 @@ describe("homeCommand", () => {
     );
   });
 
+  it("omits the more-meetings hint on a short page", async () => {
+    json.mockResolvedValue([
+      {
+        id: "id0",
+        title: "Only",
+        date: "2024-04-22T20:14:04.454Z",
+        duration: 30,
+        organizer_email: null,
+        participants: [],
+      },
+    ]);
+    const out = await homeCommand();
+    expect(out).toContain("count: 1 most recent meetings");
+    expect(out).toContain("help[1]:");
+    expect(out).not.toContain("for more meetings");
+  });
+
+  it("quotes a relayed API error that holds TOON delimiters", async () => {
+    json.mockImplementation(async () => {
+      throw mapFirefliesError(6, "fireflies: rate, limited: x\n");
+    });
+    const out = await homeCommand();
+    expect(out).toContain("  code: API_ERROR\n");
+    expect(out).toContain('  error: "rate, limited: x"');
+  });
+
   it("says when the account is empty", async () => {
     json.mockResolvedValue([]);
     const out = await homeCommand();
@@ -53,7 +79,7 @@ describe("homeCommand", () => {
     });
     const out = await homeCommand();
     expect(out).toContain(
-      "transcripts: unavailable (AUTH: FIREFLIES_API_KEY is not set)",
+      "transcripts:\n  status: unavailable\n  code: AUTH\n  error: FIREFLIES_API_KEY is not set",
     );
     expect(out).toContain("help[1]:");
     expect(out).toContain("Do not ask them to paste the key into the chat");

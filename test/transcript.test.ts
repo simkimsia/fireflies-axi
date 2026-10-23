@@ -224,8 +224,33 @@ describe("transcriptCommand output", () => {
     const out = await transcriptCommand(["abc123"]);
     expect(out).not.toContain("null");
     expect(out).not.toMatch(/organizer:|url:|speakers/);
-    expect(out).toContain('participants: "24 (first 10: p0@example.com, ');
+    const parsed = decode(out) as Record<string, any>;
+    expect(parsed.transcript.participants).toEqual(many.slice(0, 10));
+    expect(parsed.transcript.participants_total).toBe(24);
     expect(out).not.toContain("p10@example.com");
+    expect(out).toContain(
+      "Showing 10 of 24 participants; run `fireflies-axi transcript abc123 --full` for all",
+    );
+  });
+
+  it("keeps participants an array with no total when 10 or fewer", async () => {
+    const ten = Array.from({ length: 10 }, (_, i) => `p${i}@example.com`);
+    json.mockResolvedValue(meeting({ participants: ten }));
+    const out = await transcriptCommand(["abc123"]);
+    const parsed = decode(out) as Record<string, any>;
+    expect(parsed.transcript.participants).toEqual(ten);
+    expect(out).not.toContain("participants_total");
+    expect(out).not.toContain("participants; run");
+  });
+
+  it("lists every participant with --full", async () => {
+    const many = Array.from({ length: 12 }, (_, i) => `p${i}@example.com`);
+    json.mockResolvedValue(meeting({ participants: many }));
+    const out = await transcriptCommand(["abc123", "--full"]);
+    const parsed = decode(out) as Record<string, any>;
+    expect(parsed.transcript.participants).toEqual(many);
+    expect(out).not.toContain("participants_total");
+    expect(out).not.toContain("help[");
   });
 
   it("falls back to the epoch-ms date when dateString is missing", async () => {

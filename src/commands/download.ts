@@ -35,7 +35,9 @@ export async function downloadCommand(args: string[]): Promise<string> {
   const id = requireId("download", args, FLAGS);
 
   const stdout = await firefliesExec(
-    ["transcript", "download", id, "--format", format, "--dir", dir],
+    // One token per option, so argparse never reads a dash-leading value
+    // (`--dir=-x`) as an option.
+    ["transcript", "download", id, `--format=${format}`, `--dir=${dir}`],
     { id },
   );
   const printed = stdout

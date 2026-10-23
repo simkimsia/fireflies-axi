@@ -15,6 +15,8 @@ import { renderHelp, renderList, renderOutput } from "../toon.js";
 
 export const TRANSCRIPTS_LIMIT_DEFAULT = 20;
 export const TRANSCRIPTS_LIMIT_MAX = 100;
+/** The Fireflies API rejects a larger skip with invalid_arguments. */
+export const TRANSCRIPTS_SKIP_MAX = 5000;
 const EXTRA_FIELDS = ["organizer", "participants"] as const;
 type ExtraField = (typeof EXTRA_FIELDS)[number];
 const FLAGS = ["--limit", "--skip", "--fields"];
@@ -23,7 +25,7 @@ export const TRANSCRIPTS_HELP = `usage: fireflies-axi transcripts [flags]
 Lists meetings, newest first: id, date, duration, title.
 flags[3]:
   --limit <n>        rows to return (default ${TRANSCRIPTS_LIMIT_DEFAULT}, max ${TRANSCRIPTS_LIMIT_MAX})
-  --skip <n>         offset for paging (default 0)
+  --skip <n>         offset for paging (default 0, max ${TRANSCRIPTS_SKIP_MAX})
   --fields <list>    extra columns: ${EXTRA_FIELDS.join(", ")}
 examples:
   fireflies-axi transcripts
@@ -39,6 +41,16 @@ export async function transcriptsCommand(args: string[]): Promise<string> {
     TRANSCRIPTS_LIMIT_MAX,
   );
   const skip = takeNonNegativeIntFlag(args, "--skip", 0);
+  if (skip > TRANSCRIPTS_SKIP_MAX) {
+    // Retrying would never help, so refuse here rather than relay API_ERROR.
+    throw new AxiError(
+      `--skip must be at most ${TRANSCRIPTS_SKIP_MAX} (Fireflies API limit), got ${skip}`,
+      "VALIDATION_ERROR",
+      [
+        `Pass \`--skip\` between 0 and ${TRANSCRIPTS_SKIP_MAX}; the Fireflies API cannot page further`,
+      ],
+    );
+  }
   const fields = parseFields(takeFlag(args, "--fields"));
   assertNoArgs("transcripts", args, FLAGS);
 
@@ -120,9 +132,12 @@ export function renderTranscripts(
     "Run `fireflies-axi transcript <id>` for details and a transcript preview",
   ];
   if (full) {
+    const next = skip + limit;
     const extra = fields.length > 0 ? ` --fields ${fields.join(",")}` : "";
     hints.push(
-      `More may exist: run \`fireflies-axi transcripts --limit ${limit} --skip ${skip + limit}${extra}\``,
+      next <= TRANSCRIPTS_SKIP_MAX
+        ? `More may exist: run \`fireflies-axi transcripts --limit ${limit} --skip ${next}${extra}\``
+        : `More may exist, but the Fireflies API cannot page past --skip ${TRANSCRIPTS_SKIP_MAX}`,
     );
   }
   return renderOutput([

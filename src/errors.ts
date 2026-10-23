@@ -78,15 +78,23 @@ export function mapFirefliesError(
   const line = relayLine(stderr);
   switch (exitCode) {
     case 1: {
+      // cli.py _write is the only deliberate exit 1; any other exit 1 is an
+      // uncaught Python exception (traceback on stderr, exception last).
       const match = /Could not write (.+?): (.+)$/.exec(line);
+      if (match) {
+        return new AxiError(
+          `Could not write ${match[1]}: ${match[2]}`,
+          "WRITE_FAILED",
+          [
+            "Check that `--dir` exists and is writable, or pass another `--dir <path>`",
+          ],
+        );
+      }
+      const last = lastRelayLine(stderr);
       return new AxiError(
-        match
-          ? `Could not write ${match[1]}: ${match[2]}`
-          : "Could not write the transcript file",
-        "WRITE_FAILED",
-        [
-          "Check that `--dir` exists and is writable, or pass another `--dir <path>`",
-        ],
+        `fireflies crashed${last ? `: ${last}` : ""}`,
+        "UNKNOWN",
+        [UNKNOWN_SUGGESTION],
       );
     }
     case 2:
@@ -138,6 +146,17 @@ export function mapFirefliesError(
         [UNKNOWN_SUGGESTION],
       );
   }
+}
+
+/** Last non-empty stderr line (a traceback's exception), capped. */
+function lastRelayLine(stderr: string): string {
+  const last =
+    stderr
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l !== "")
+      .at(-1) ?? "";
+  return last.replace(/^fireflies:\s*/, "").slice(0, RELAY_MAX);
 }
 
 /** First non-empty stderr line, `fireflies: ` prefix stripped, capped. */

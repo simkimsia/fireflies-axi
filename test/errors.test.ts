@@ -21,6 +21,22 @@ const cases: Array<{
     help: "Check that `--dir` exists and is writable, or pass another `--dir <path>`",
   },
   {
+    // uncaught Python exception: traceback, exception on the last line
+    exit: 1,
+    stderr:
+      "Traceback (most recent call last):\n  File \"cli.py\", line 82, in _list\n    rows = [summary_row(t) for t in rows]\nKeyError: 'id'\n",
+    code: "UNKNOWN",
+    message: "fireflies crashed: KeyError: 'id'",
+    help: "Report the gap at https://github.com/simkimsia/fireflies-axi/issues",
+  },
+  {
+    exit: 1,
+    stderr: "",
+    code: "UNKNOWN",
+    message: "fireflies crashed",
+    help: "Report the gap at https://github.com/simkimsia/fireflies-axi/issues",
+  },
+  {
     // argparse usage error
     exit: 2,
     stderr:

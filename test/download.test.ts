@@ -27,13 +27,22 @@ describe("downloadCommand", () => {
     exec.mockResolvedValue(`${file}\n`);
     const out = await downloadCommand(["abc123", "--dir", dir]);
     expect(exec).toHaveBeenCalledWith(
-      ["transcript", "download", "abc123", "--format", "md", "--dir", dir],
+      ["transcript", "download", "abc123", "--format=md", `--dir=${dir}`],
       { id: "abc123" },
     );
     expect(out).toContain("format: md");
     expect(out).toContain(`path: ${collapseHome(file)}`);
     expect(out).toContain("bytes: 14");
     expect(out).not.toContain("help[");
+  });
+
+  it("forwards a dash-leading --dir as one token", async () => {
+    exec.mockResolvedValue(`${file}\n`);
+    await downloadCommand(["abc123", "--dir=-x"]);
+    expect(exec).toHaveBeenCalledWith(
+      ["transcript", "download", "abc123", "--format=md", "--dir=-x"],
+      { id: "abc123" },
+    );
   });
 
   it("makes a relative printed path absolute", async () => {

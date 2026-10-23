@@ -72,10 +72,8 @@ describe("argv forwarded to fireflies", () => {
       "transcript",
       "download",
       "abc123",
-      "--format",
-      "md",
-      "--dir",
-      "/tmp/x",
+      "--format=md",
+      "--dir=/tmp/x",
     ]);
   });
 
