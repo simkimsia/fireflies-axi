@@ -1,6 +1,6 @@
 {
   "name": "@simkimsia/fireflies-axi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packageManager": "pnpm@10.33.0",
   "description": "AXI-compliant wrapper around the fireflies CLI for Fireflies.ai meeting transcripts — token-efficient TOON output, structured errors, agent-first ergonomics",
   "type": "module",
